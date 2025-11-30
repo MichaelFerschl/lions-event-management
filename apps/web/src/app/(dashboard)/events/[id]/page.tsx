@@ -8,6 +8,21 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDate, formatTime, formatCurrency } from '@/lib/format';
 
+type Registration = {
+  id: string;
+  status: string;
+  guestCount: number;
+  guestNames: string[];
+  isPaid: boolean;
+  member: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    avatarUrl: string | null;
+  };
+};
+
 export default async function EventDetailPage({
   params,
 }: {
@@ -43,7 +58,7 @@ export default async function EventDetailPage({
 
   const isPast = new Date(event.startDate) < new Date();
   const registeredCount = event.registrations.filter(
-    (r) => r.status === 'REGISTERED'
+    (r: Registration) => r.status === 'REGISTERED'
   ).length;
 
   return (
@@ -129,8 +144,8 @@ export default async function EventDetailPage({
                 {event.registrations.length > 0 ? (
                   <div className="space-y-3">
                     {event.registrations
-                      .filter((r) => r.status === 'REGISTERED')
-                      .map((registration) => (
+                      .filter((r: Registration) => r.status === 'REGISTERED')
+                      .map((registration: Registration) => (
                         <div
                           key={registration.id}
                           className="flex items-center justify-between py-2 border-b last:border-0"
