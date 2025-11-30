@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "postinstall": "prisma generate --schema=../../packages/database/prisma/schema.prisma",
+    "postinstall": "prisma generate",
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start",
@@ -13,7 +13,7 @@
   "dependencies": {
     "@clerk/localizations": "^3.28.5",
     "@clerk/nextjs": "^5.0.0",
-    "@lions-hub/database": "workspace:*",
+    "@prisma/client": "^5.9.1",
     "clsx": "^2.1.0",
     "next": "^14.2.0",
     "next-intl": "^3.0.0",

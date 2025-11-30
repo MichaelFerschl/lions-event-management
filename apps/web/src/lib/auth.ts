@@ -1,6 +1,6 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
-import { db, Member, MemberRole } from '@lions-hub/database';
+import { db, type Member, MemberRole } from '@/lib/db';
 import { getCurrentTenant } from './tenant';
 
 /**

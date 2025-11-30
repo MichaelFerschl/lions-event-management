@@ -1,0 +1,307 @@
+// Lions Event Management Hub - Prisma Schema
+// Multi-tenant event management system for Lions Clubs
+//
+// NOTE: This is a copy of packages/database/prisma/schema.prisma
+// optimized for Vercel deployment. Keep both files synchronized!
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================
+// Enums
+// ============================================
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PREMIUM
+}
+
+enum MemberRole {
+  ADMIN
+  BOARD
+  MEMBER
+  GUEST
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+  SUSPENDED
+}
+
+enum EventType {
+  REGULAR_MEETING
+  BOARD_MEETING
+  GENERAL_ASSEMBLY
+  ACTIVITY
+  FUNDRAISING
+  SOCIAL
+  DISTRICT
+  INTERNATIONAL
+  OTHER
+}
+
+enum EventVisibility {
+  PUBLIC
+  MEMBERS
+  BOARD
+}
+
+enum RegistrationStatus {
+  REGISTERED
+  CANCELLED
+  MAYBE
+  WAITLIST
+  NO_RESPONSE
+}
+
+// ============================================
+// Models
+// ============================================
+
+model Tenant {
+  id        String   @id @default(cuid())
+  slug      String   @unique // for subdomain (e.g., "lions-zurich")
+  name      String
+  clerkOrgId String? @unique
+
+  // Branding
+  logo         String? // URL to logo image
+  primaryColor String  @default("#00338D") // Lions blue
+  accentColor  String  @default("#EBB700") // Lions gold
+
+  // Contact information
+  email   String?
+  phone   String?
+  website String?
+  address String? @db.Text
+
+  // Settings & Features
+  settings Json    @default("{}")
+  features String[] @default([])
+
+  // Subscription
+  plan          SubscriptionPlan @default(FREE)
+  planExpiresAt DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  members            Member[]
+  events             Event[]
+  activityTypes      ActivityType[]
+  eventRegistrations EventRegistration[]
+  eventAttachments   EventAttachment[]
+
+  @@index([slug])
+  @@index([clerkOrgId])
+  @@map("tenants")
+}
+
+model Member {
+  id          String   @id @default(cuid())
+  tenantId    String
+  clerkUserId String
+
+  // Profile
+  firstName String
+  lastName  String
+  email     String
+  phone     String?
+  avatarUrl String?
+
+  // Lions-specific
+  memberNumber String? // Club membership number
+  joinDate     DateTime?
+  sponsor      String? // Name of sponsor member
+
+  // Role & Status
+  role   MemberRole   @default(MEMBER)
+  status MemberStatus @default(PENDING)
+
+  // Preferences
+  locale             String  @default("de") // de or en
+  emailNotifications Boolean @default(true)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdEvents      Event[]
+  eventRegistrations EventRegistration[]
+
+  @@unique([tenantId, clerkUserId])
+  @@index([tenantId])
+  @@index([clerkUserId])
+  @@index([email])
+  @@index([status])
+  @@map("members")
+}
+
+model ActivityType {
+  id       String @id @default(cuid())
+  tenantId String
+
+  // Names
+  name   String
+  nameEn String?
+
+  // Styling
+  color String @default("#00338D")
+  icon  String? // Icon identifier (e.g., "calendar", "trophy")
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  events Event[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("activity_types")
+}
+
+model Event {
+  id       String @id @default(cuid())
+  tenantId String
+
+  // Basic information
+  title       String
+  titleEn     String?
+  description String  @db.Text
+  descriptionEn String? @db.Text
+
+  // Classification
+  type           EventType @default(ACTIVITY)
+  categoryId     String?
+
+  // Location
+  location    String?
+  locationUrl String?
+  isOnline    Boolean @default(false)
+  onlineUrl   String?
+
+  // Date & Time
+  startDate DateTime
+  endDate   DateTime?
+  allDay    Boolean  @default(false)
+
+  // Registration
+  registrationRequired Boolean   @default(true)
+  registrationDeadline DateTime?
+  maxParticipants      Int?
+  allowGuests          Boolean   @default(true)
+  maxGuestsPerMember   Int       @default(2)
+
+  // Cost
+  costMember Decimal @default(0) @db.Decimal(10, 2)
+  costGuest  Decimal @default(0) @db.Decimal(10, 2)
+
+  // Visibility & Status
+  visibility  EventVisibility @default(MEMBERS)
+  isPublished Boolean         @default(false)
+  isCancelled Boolean         @default(false)
+
+  // Reminders
+  reminderDays Int[] @default([7, 3, 1]) // Days before event to send reminders
+
+  // Creator
+  createdById String
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category      ActivityType?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  createdBy     Member              @relation(fields: [createdById], references: [id])
+  registrations EventRegistration[]
+  attachments   EventAttachment[]
+
+  @@index([tenantId])
+  @@index([categoryId])
+  @@index([createdById])
+  @@index([startDate])
+  @@index([type])
+  @@index([visibility])
+  @@index([isPublished])
+  @@map("events")
+}
+
+model EventRegistration {
+  id       String @id @default(cuid())
+  tenantId String
+  eventId  String
+  memberId String
+
+  // Registration status
+  status RegistrationStatus @default(REGISTERED)
+
+  // Guests
+  guestCount Int      @default(0)
+  guestNames String[] @default([])
+  comment    String?  @db.Text
+  dietaryNotes String? @db.Text
+
+  // Payment
+  totalCost Decimal   @default(0) @db.Decimal(10, 2)
+  isPaid    Boolean   @default(false)
+  paidAt    DateTime?
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, memberId])
+  @@index([tenantId])
+  @@index([eventId])
+  @@index([memberId])
+  @@index([status])
+  @@map("event_registrations")
+}
+
+model EventAttachment {
+  id       String @id @default(cuid())
+  tenantId String
+  eventId  String
+
+  // File information
+  fileName String
+  fileUrl  String
+  fileType String
+  fileSize Int // in bytes
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  event  Event  @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([eventId])
+  @@map("event_attachments")
+}

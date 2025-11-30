@@ -1,5 +1,5 @@
 import { headers } from 'next/headers';
-import { db, Tenant } from '@lions-hub/database';
+import { db, type Tenant } from '@/lib/db';
 import { unstable_cache } from 'next/cache';
 
 /**
