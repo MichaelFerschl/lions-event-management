@@ -1,5 +1,4 @@
 import Link from 'next/link';
-import { headers } from 'next/headers';
 import { getCurrentTenant } from '@/lib/tenant';
 
 export default async function DashboardLayout({

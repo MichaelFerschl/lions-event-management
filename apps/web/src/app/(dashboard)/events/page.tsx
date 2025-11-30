@@ -5,6 +5,7 @@ import { getCurrentTenant } from '@/lib/tenant';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { EventCard } from '@/components/events/event-card';
+import { EventWithCount } from '@/types';
 
 export default async function EventsPage({
   searchParams,
@@ -65,21 +66,18 @@ export default async function EventsPage({
           <FilterTab
             href="/events?filter=upcoming"
             active={filter === 'upcoming'}
-            locale={locale}
           >
             {locale === 'en' ? 'Upcoming' : 'Kommende'}
           </FilterTab>
           <FilterTab
             href="/events?filter=past"
             active={filter === 'past'}
-            locale={locale}
           >
             {locale === 'en' ? 'Past' : 'Vergangene'}
           </FilterTab>
           <FilterTab
             href="/events?filter=all"
             active={filter === 'all'}
-            locale={locale}
           >
             {locale === 'en' ? 'All' : 'Alle'}
           </FilterTab>
@@ -89,7 +87,7 @@ export default async function EventsPage({
       {/* Events Grid */}
       {events.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {events.map((event) => (
+          {events.map((event: EventWithCount) => (
             <EventCard key={event.id} event={event} locale={locale} />
           ))}
         </div>
@@ -130,12 +128,10 @@ function FilterTab({
   href,
   active,
   children,
-  locale,
 }: {
   href: string;
   active: boolean;
   children: React.ReactNode;
-  locale: string;
 }) {
   return (
     <Link

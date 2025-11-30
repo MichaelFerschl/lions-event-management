@@ -3,7 +3,10 @@
     "allow": [
       "Bash(pnpm install:*)",
       "Bash(npm:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(pnpm type-check:*)"
     ],
     "deny": [],
     "ask": []

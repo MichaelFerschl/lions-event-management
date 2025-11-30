@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EventCard } from '@/components/events/event-card';
 import { formatDate, formatTime } from '@/lib/format';
+import { EventWithCount } from '@/types';
 
 export default async function DashboardPage() {
   const tenant = await getCurrentTenant();
@@ -163,7 +164,7 @@ export default async function DashboardPage() {
 
         {upcomingEvents.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {upcomingEvents.map((event) => (
+            {upcomingEvents.map((event: EventWithCount) => (
               <EventCard key={event.id} event={event} locale={locale} />
             ))}
           </div>

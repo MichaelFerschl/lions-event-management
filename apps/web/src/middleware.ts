@@ -47,7 +47,7 @@ function handleRequest(request: NextRequest): NextResponse {
 
 // Export middleware - use Clerk if configured, otherwise just handle tenant/locale
 export default isClerkConfigured
-  ? clerkMiddleware((auth, request) => {
+  ? clerkMiddleware((_auth, request) => {
       return handleRequest(request);
     })
   : function middleware(request: NextRequest) {

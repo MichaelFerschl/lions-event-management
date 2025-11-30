@@ -1,23 +1,17 @@
 import Link from 'next/link';
-import { Event, ActivityType } from '@lions-hub/database';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatDate, formatTime } from '@/lib/format';
+import { EventWithCount } from '@/types';
 
 interface EventCardProps {
-  event: Event & {
-    category: ActivityType | null;
-    _count?: {
-      registrations: number;
-    };
-  };
+  event: EventWithCount;
   locale?: string;
 }
 
 export function EventCard({ event, locale = 'de' }: EventCardProps) {
   const isOnline = event.isOnline;
   const isCancelled = event.isCancelled;
-  const isPast = new Date(event.startDate) < new Date();
 
   return (
     <Link href={`/events/${event.id}`}>
