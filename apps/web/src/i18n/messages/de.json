@@ -1,0 +1,104 @@
+{
+  "common": {
+    "appName": "Lions Event Management Hub",
+    "tagline": "Einer Welt in Not helfen",
+    "welcome": "Willkommen",
+    "loading": "Lädt...",
+    "error": "Fehler",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "back": "Zurück",
+    "search": "Suchen",
+    "filter": "Filtern",
+    "export": "Exportieren",
+    "import": "Importieren",
+    "close": "Schließen",
+    "confirm": "Bestätigen",
+    "yes": "Ja",
+    "no": "Nein"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "events": "Veranstaltungen",
+    "members": "Mitglieder",
+    "protocols": "Protokolle",
+    "gallery": "Galerie",
+    "settings": "Einstellungen",
+    "profile": "Profil"
+  },
+  "events": {
+    "title": "Veranstaltungen",
+    "upcoming": "Kommende Veranstaltungen",
+    "past": "Vergangene Veranstaltungen",
+    "register": "Anmelden",
+    "cancel": "Abmelden",
+    "participants": "Teilnehmer",
+    "guests": "Gäste",
+    "details": "Details",
+    "location": "Ort",
+    "date": "Datum",
+    "time": "Uhrzeit",
+    "description": "Beschreibung",
+    "cost": "Kosten",
+    "costMember": "Mitglied",
+    "costGuest": "Gast",
+    "registrationDeadline": "Anmeldefrist",
+    "maxParticipants": "Max. Teilnehmer",
+    "status": {
+      "registered": "Angemeldet",
+      "cancelled": "Abgemeldet",
+      "maybe": "Vielleicht",
+      "waitlist": "Warteliste",
+      "noResponse": "Keine Antwort"
+    }
+  },
+  "members": {
+    "title": "Mitglieder",
+    "name": "Name",
+    "email": "E-Mail",
+    "phone": "Telefon",
+    "role": "Rolle",
+    "status": "Status",
+    "joinDate": "Beitrittsdatum",
+    "memberNumber": "Mitgliedsnummer",
+    "roles": {
+      "admin": "Administrator",
+      "board": "Vorstand",
+      "member": "Mitglied",
+      "guest": "Gast"
+    },
+    "statuses": {
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "pending": "Ausstehend",
+      "suspended": "Gesperrt"
+    }
+  },
+  "protocols": {
+    "title": "Protokolle",
+    "new": "Neues Protokoll",
+    "view": "Ansehen",
+    "download": "Herunterladen"
+  },
+  "gallery": {
+    "title": "Galerie",
+    "upload": "Hochladen",
+    "albums": "Alben"
+  },
+  "auth": {
+    "signIn": "Anmelden",
+    "signOut": "Abmelden",
+    "signUp": "Registrieren",
+    "profile": "Profil",
+    "settings": "Einstellungen"
+  },
+  "errors": {
+    "notFound": "Seite nicht gefunden",
+    "unauthorized": "Nicht autorisiert",
+    "forbidden": "Zugriff verweigert",
+    "serverError": "Serverfehler",
+    "tryAgain": "Bitte versuchen Sie es erneut"
+  }
+}

@@ -1,0 +1,104 @@
+{
+  "common": {
+    "appName": "Lions Event Management Hub",
+    "tagline": "Helping a World in Need",
+    "welcome": "Welcome",
+    "loading": "Loading...",
+    "error": "Error",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "import": "Import",
+    "close": "Close",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "events": "Events",
+    "members": "Members",
+    "protocols": "Minutes",
+    "gallery": "Gallery",
+    "settings": "Settings",
+    "profile": "Profile"
+  },
+  "events": {
+    "title": "Events",
+    "upcoming": "Upcoming Events",
+    "past": "Past Events",
+    "register": "Register",
+    "cancel": "Cancel Registration",
+    "participants": "Participants",
+    "guests": "Guests",
+    "details": "Details",
+    "location": "Location",
+    "date": "Date",
+    "time": "Time",
+    "description": "Description",
+    "cost": "Cost",
+    "costMember": "Member",
+    "costGuest": "Guest",
+    "registrationDeadline": "Registration Deadline",
+    "maxParticipants": "Max. Participants",
+    "status": {
+      "registered": "Registered",
+      "cancelled": "Cancelled",
+      "maybe": "Maybe",
+      "waitlist": "Waitlist",
+      "noResponse": "No Response"
+    }
+  },
+  "members": {
+    "title": "Members",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone",
+    "role": "Role",
+    "status": "Status",
+    "joinDate": "Join Date",
+    "memberNumber": "Member Number",
+    "roles": {
+      "admin": "Administrator",
+      "board": "Board Member",
+      "member": "Member",
+      "guest": "Guest"
+    },
+    "statuses": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "pending": "Pending",
+      "suspended": "Suspended"
+    }
+  },
+  "protocols": {
+    "title": "Minutes",
+    "new": "New Minutes",
+    "view": "View",
+    "download": "Download"
+  },
+  "gallery": {
+    "title": "Gallery",
+    "upload": "Upload",
+    "albums": "Albums"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "signUp": "Sign Up",
+    "profile": "Profile",
+    "settings": "Settings"
+  },
+  "errors": {
+    "notFound": "Page not found",
+    "unauthorized": "Unauthorized",
+    "forbidden": "Access denied",
+    "serverError": "Server error",
+    "tryAgain": "Please try again"
+  }
+}
