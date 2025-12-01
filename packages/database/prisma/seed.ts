@@ -24,6 +24,7 @@ async function main() {
       slug: 'lauf',
       name: 'Lions Club Lauf an der Pegnitz',
       clerkOrgId: 'org_demo_lauf', // TODO: Replace with actual Clerk Org ID
+      clubNumber: '123456', // Lions Club Nummer
       primaryColor: '#00338D',
       accentColor: '#EBB700',
       email: 'info@lions-lauf.de',
@@ -32,6 +33,21 @@ async function main() {
       address: 'Marktplatz 1, 91207 Lauf an der Pegnitz',
       features: ['events', 'members', 'protocols', 'gallery'],
       plan: 'PREMIUM',
+      // Website-Konfiguration
+      websiteEnabled: true,
+      websiteTitle: 'Lions Club Lauf an der Pegnitz',
+      websiteLogo: '/images/lions-lauf-logo.png',
+      heroImage: '/images/hero-lauf.jpg',
+      heroText:
+        'Wir sind der Lions Club Lauf an der Pegnitz. Seit über 40 Jahren engagieren wir uns für soziale Projekte in unserer Region. Gemeinsam machen wir die Welt ein Stück besser.',
+      aboutText:
+        'Der Lions Club Lauf an der Pegnitz wurde 1982 gegründet und ist Teil von Lions Clubs International, der weltweit größten Service-Organisation. Mit über 40 engagierten Mitgliedern setzen wir uns für Menschen in Not ein, unterstützen lokale Projekte und fördern das Gemeinwohl in unserer Region.\n\nUnsere Schwerpunkte:\n• Jugendförderung und Bildung\n• Unterstützung von Menschen mit Behinderungen\n• Hilfe für Bedürftige in der Region\n• Internationale Hilfsprojekte\n\nWir freuen uns auf Ihre Unterstützung!',
+      contactEmail: 'kontakt@lions-lauf.de',
+      contactPhone: '+49 9123 12345',
+      contactAddress: 'Lions Club Lauf\nMarktplatz 1\n91207 Lauf an der Pegnitz',
+      socialFacebook: 'https://www.facebook.com/lionsclublauf',
+      socialInstagram: 'https://www.instagram.com/lionsclublauf',
+      socialLinkedin: 'https://www.linkedin.com/company/lions-club-lauf',
     },
   });
   console.log(`✅ Tenant created: ${tenant.name}`);
@@ -207,6 +223,7 @@ async function main() {
       costGuest: 30.0,
       visibility: 'MEMBERS',
       isPublished: true,
+      isPublic: true, // Auf öffentlicher Club-Website sichtbar (Gäste willkommen)
       reminderDays: [7, 3, 1],
     },
   });
@@ -273,6 +290,7 @@ async function main() {
       costGuest: 5.0,
       visibility: 'PUBLIC',
       isPublished: true,
+      isPublic: true, // Auf öffentlicher Club-Website sichtbar
       reminderDays: [14, 7, 3, 1],
     },
   });

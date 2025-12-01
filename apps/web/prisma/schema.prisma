@@ -74,6 +74,7 @@ model Tenant {
   slug      String   @unique // for subdomain (e.g., "lions-zurich")
   name      String
   clerkOrgId String? @unique
+  clubNumber String  @unique // Lions Club Nummer (z.B. "123456")
 
   // Branding
   logo         String? // URL to logo image
@@ -85,6 +86,20 @@ model Tenant {
   phone   String?
   website String?
   address String? @db.Text
+
+  // Website configuration
+  websiteEnabled   Boolean @default(false)
+  websiteTitle     String?
+  websiteLogo      String? // URL zum Logo
+  heroImage        String? // URL zum Hero-Bild
+  heroText         String? @db.Text
+  aboutText        String? @db.Text // Über uns Text
+  contactEmail     String?
+  contactPhone     String?
+  contactAddress   String? @db.Text
+  socialFacebook   String? // Facebook-URL
+  socialInstagram  String? // Instagram-URL
+  socialLinkedin   String? // LinkedIn-URL
 
   // Settings & Features
   settings Json    @default("{}")
@@ -217,6 +232,7 @@ model Event {
   visibility  EventVisibility @default(MEMBERS)
   isPublished Boolean         @default(false)
   isCancelled Boolean         @default(false)
+  isPublic    Boolean         @default(false) // Sichtbar auf öffentlicher Club-Website
 
   // Reminders
   reminderDays Int[] @default([7, 3, 1]) // Days before event to send reminders
