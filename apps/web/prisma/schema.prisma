@@ -1,8 +1,5 @@
 // Lions Event Management Hub - Prisma Schema
 // Multi-tenant event management system for Lions Clubs
-//
-// NOTE: This is a copy of packages/database/prisma/schema.prisma
-// optimized for Vercel deployment. Keep both files synchronized!
 
 generator client {
   provider      = "prisma-client-js"
@@ -65,6 +62,24 @@ enum RegistrationStatus {
   NO_RESPONSE
 }
 
+enum LionsYearStatus {
+  DRAFT
+  PLANNING
+  ACTIVE
+  ARCHIVED
+}
+
+enum PlannedEventStatus {
+  PLANNED
+  CONFIRMED
+  CANCELLED
+}
+
+enum RecurringFrequency {
+  WEEKLY
+  MONTHLY
+}
+
 // ============================================
 // Models
 // ============================================
@@ -119,6 +134,10 @@ model Tenant {
   activityTypes      ActivityType[]
   eventRegistrations EventRegistration[]
   eventAttachments   EventAttachment[]
+  eventCategories    EventCategory[]
+  eventTemplates     EventTemplate[]
+  recurringRules     RecurringRule[]
+  lionsYears         LionsYear[]
 
   @@index([slug])
   @@index([clerkOrgId])
@@ -250,6 +269,7 @@ model Event {
   createdBy     Member              @relation(fields: [createdById], references: [id])
   registrations EventRegistration[]
   attachments   EventAttachment[]
+  plannedEvents PlannedEvent[]      // Events created from planned events
 
   @@index([tenantId])
   @@index([categoryId])
@@ -320,4 +340,146 @@ model EventAttachment {
   @@index([tenantId])
   @@index([eventId])
   @@map("event_attachments")
+}
+
+// ============================================
+// Lions Year Planning Models
+// ============================================
+
+model EventCategory {
+  id        String  @id @default(cuid())
+  tenantId  String
+  name      String // z.B. "Clubabend", "Activity", "Versammlung"
+  color     String? // Hex-Farbe für Kalender
+  icon      String? // Icon-Name
+  isDefault Boolean @default(false) // vordefinierte Kategorie
+  sortOrder Int     @default(0)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant        Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  templates     EventTemplate[]
+  recurringRules RecurringRule[]
+  plannedEvents PlannedEvent[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([sortOrder])
+  @@map("event_categories")
+}
+
+model EventTemplate {
+  id                    String  @id @default(cuid())
+  tenantId              String
+  categoryId            String
+  name                  String // z.B. "Mitgliederversammlung", "Bobby Car Rennen"
+  description           String? @db.Text
+  defaultInvitationText String? @db.Text // Text für Einladungen
+  isMandatory           Boolean @default(false) // Pflichttermin
+  defaultMonth          Int? // 1-12, Monat in dem Termin normalerweise stattfindet
+  defaultDurationMinutes Int    @default(120)
+  isActive              Boolean @default(true)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category      EventCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  plannedEvents PlannedEvent[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([categoryId])
+  @@map("event_templates")
+}
+
+model RecurringRule {
+  id                String             @id @default(cuid())
+  tenantId          String
+  name              String // z.B. "Erster Dienstag", "Letzter Donnerstag"
+  description       String?
+  frequency         RecurringFrequency @default(MONTHLY)
+  dayOfWeek         Int // 0=Sonntag, 1=Montag, ..., 6=Samstag
+  weekOfMonth       Int? // 1=erste, 2=zweite, -1=letzte Woche
+  defaultCategoryId String?
+  defaultTitle      String? // z.B. "Clubabend"
+  isActive          Boolean            @default(true)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  defaultCategory EventCategory? @relation(fields: [defaultCategoryId], references: [id], onDelete: SetNull)
+  plannedEvents   PlannedEvent[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([defaultCategoryId])
+  @@map("recurring_rules")
+}
+
+model LionsYear {
+  id         String          @id @default(cuid())
+  tenantId   String
+  name       String // z.B. "Lionsjahr 2024/2025"
+  startDate  DateTime
+  endDate    DateTime
+  status     LionsYearStatus @default(DRAFT)
+  isArchived Boolean         @default(false)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  plannedEvents PlannedEvent[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@index([status])
+  @@map("lions_years")
+}
+
+model PlannedEvent {
+  id               String             @id @default(cuid())
+  lionsYearId      String
+  templateId       String?
+  recurringRuleId  String?
+  categoryId       String
+  publishedEventId String?            // Reference to Event when published
+  date             DateTime
+  endDate          DateTime?
+  title            String
+  description      String?            @db.Text
+  invitationText   String?            @db.Text
+  status           PlannedEventStatus @default(PLANNED)
+  isMandatory      Boolean            @default(false)
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  lionsYear      LionsYear      @relation(fields: [lionsYearId], references: [id], onDelete: Cascade)
+  template       EventTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  recurringRule  RecurringRule? @relation(fields: [recurringRuleId], references: [id], onDelete: SetNull)
+  category       EventCategory  @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  publishedEvent Event?         @relation(fields: [publishedEventId], references: [id], onDelete: SetNull)
+
+  @@index([lionsYearId])
+  @@index([templateId])
+  @@index([recurringRuleId])
+  @@index([categoryId])
+  @@index([publishedEventId])
+  @@index([date])
+  @@index([status])
+  @@map("planned_events")
 }

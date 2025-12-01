@@ -9,7 +9,9 @@
       "Bash(pnpm type-check:*)",
       "Bash(pnpm db:push:*)",
       "Bash(pnpm prisma:*)",
-      "Bash(pnpm db:seed:*)"
+      "Bash(pnpm db:seed:*)",
+      "Bash(copy:*)",
+      "Bash(npx tsx:*)"
     ],
     "deny": [],
     "ask": []
