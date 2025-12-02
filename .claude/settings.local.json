@@ -11,7 +11,11 @@
       "Bash(pnpm prisma:*)",
       "Bash(pnpm db:seed:*)",
       "Bash(copy:*)",
-      "Bash(npx tsx:*)"
+      "Bash(npx tsx:*)",
+      "Bash(pnpm add:*)",
+      "Bash(mkdir:*)",
+      "Bash(npx prisma db push:*)",
+      "Bash(npx prisma generate:*)"
     ],
     "deny": [],
     "ask": []

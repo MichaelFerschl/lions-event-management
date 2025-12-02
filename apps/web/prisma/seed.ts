@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { seedPermissions, createRolesForTenant } from './seed-permissions';
 
 const prisma = new PrismaClient();
 
@@ -19,6 +20,8 @@ async function main() {
   console.log('🗑️  Resetting database...');
 
   // Delete in reverse order of dependencies
+  await prisma.rolePermission.deleteMany({});
+  await prisma.invitation.deleteMany({});
   await prisma.plannedEvent.deleteMany({});
   await prisma.lionsYear.deleteMany({});
   await prisma.eventRegistration.deleteMany({});
@@ -28,6 +31,8 @@ async function main() {
   await prisma.eventCategory.deleteMany({});
   await prisma.activityType.deleteMany({});
   await prisma.member.deleteMany({});
+  await prisma.role.deleteMany({});
+  await prisma.permission.deleteMany({});
   await prisma.tenant.deleteMany({});
 
   console.log('✅ Database reset complete');
@@ -946,6 +951,15 @@ async function main() {
     console.log(`✅ Created ${plannedEventsCount} planned events for Lions Year 2026/2027`);
   } // End of shouldCreateEvents block
 
+  // 10. Seed Permissions and Roles
+  console.log('\n🔐 Setting up permissions and roles...');
+  await seedPermissions();
+  await createRolesForTenant(tenant.id);
+
+  // Count created roles and permissions
+  const rolesCount = await prisma.role.count({ where: { tenantId: tenant.id } });
+  const permissionsCount = await prisma.permission.count();
+
   console.log('\n🎉 Database seeding completed successfully!');
   console.log('\n📊 Summary:');
   console.log(`   • 1 Tenant: ${tenant.name}`);
@@ -958,8 +972,10 @@ async function main() {
   console.log(`   • ${createdTemplates.length} Event Templates`);
   console.log(`   • 1 Lions Year (2026/2027)`);
   console.log(`   • ${plannedEventsCount} Planned Events`);
+  console.log(`   • ${permissionsCount} Permissions`);
+  console.log(`   • ${rolesCount} Roles`);
   console.log(
-    '\n⚠️  Remember to update clerkOrgId and clerkUserId values after Clerk setup!'
+    '\n⚠️  Remember to configure Supabase Auth and update authUserId values!'
   );
 }
 

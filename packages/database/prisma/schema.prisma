@@ -24,9 +24,18 @@ enum SubscriptionPlan {
 
 enum MemberRole {
   ADMIN
+  PRESIDENT
+  SECRETARY
   BOARD
   MEMBER
   GUEST
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
 }
 
 enum MemberStatus {
@@ -138,6 +147,8 @@ model Tenant {
   eventTemplates     EventTemplate[]
   recurringRules     RecurringRule[]
   lionsYears         LionsYear[]
+  roles              Role[]
+  invitations        Invitation[]
 
   @@index([slug])
   @@index([clerkOrgId])
@@ -147,7 +158,10 @@ model Tenant {
 model Member {
   id          String   @id @default(cuid())
   tenantId    String
-  clerkUserId String
+
+  // Auth-Verknüpfung (Supabase Auth User ID)
+  authUserId  String?  @unique
+  clerkUserId String?  // Legacy: Clerk User ID (deprecated)
 
   // Profile
   firstName String
@@ -161,9 +175,17 @@ model Member {
   joinDate     DateTime?
   sponsor      String? // Name of sponsor member
 
-  // Role & Status
+  // Role (neu: über Role-Tabelle)
+  roleId     String?
+  assignedRole Role?   @relation(fields: [roleId], references: [id])
+
+  // Legacy Role & Status (für Abwärtskompatibilität)
   role   MemberRole   @default(MEMBER)
   status MemberStatus @default(PENDING)
+
+  // Status
+  isActive    Boolean   @default(false) // Erst true nach Einladungs-Annahme
+  lastLoginAt DateTime?
 
   // Preferences
   locale             String  @default("de") // de or en
@@ -177,9 +199,12 @@ model Member {
   tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   createdEvents      Event[]
   eventRegistrations EventRegistration[]
+  sentInvitations    Invitation[]        @relation("InvitedByMember")
 
+  @@unique([tenantId, email])
   @@unique([tenantId, clerkUserId])
   @@index([tenantId])
+  @@index([authUserId])
   @@index([clerkUserId])
   @@index([email])
   @@index([status])
@@ -482,4 +507,77 @@ model PlannedEvent {
   @@index([date])
   @@index([status])
   @@map("planned_events")
+}
+
+// ============================================
+// Auth & Permissions Models
+// ============================================
+
+model Permission {
+  id          String   @id @default(cuid())
+  code        String   @unique // z.B. "events.read", "members.create"
+  name        String   // z.B. "Events ansehen"
+  description String?
+  category    String   // z.B. "events", "members", "planning"
+  createdAt   DateTime @default(now())
+
+  rolePermissions RolePermission[]
+
+  @@index([category])
+  @@map("permissions")
+}
+
+model Role {
+  id          String     @id @default(cuid())
+  tenantId    String
+  tenant      Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  name        String     // z.B. "Administrator", "Präsident"
+  type        MemberRole // ADMIN, PRESIDENT, etc.
+  description String?
+  isSystem    Boolean    @default(false) // System-Rollen können nicht gelöscht werden
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  rolePermissions RolePermission[]
+  members         Member[]
+
+  @@unique([tenantId, type])
+  @@index([tenantId])
+  @@map("roles")
+}
+
+model RolePermission {
+  id           String     @id @default(cuid())
+  roleId       String
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permissionId String
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+  createdAt    DateTime   @default(now())
+
+  @@unique([roleId, permissionId])
+  @@index([roleId])
+  @@index([permissionId])
+  @@map("role_permissions")
+}
+
+model Invitation {
+  id          String           @id @default(cuid())
+  tenantId    String
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  email       String
+  token       String           @unique
+  roleType    MemberRole       @default(MEMBER)
+  status      InvitationStatus @default(PENDING)
+  invitedById String
+  invitedBy   Member           @relation("InvitedByMember", fields: [invitedById], references: [id])
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  createdAt   DateTime         @default(now())
+
+  @@unique([tenantId, email, status])
+  @@index([tenantId])
+  @@index([token])
+  @@index([email])
+  @@index([status])
+  @@map("invitations")
 }

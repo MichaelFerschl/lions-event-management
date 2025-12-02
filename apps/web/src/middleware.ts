@@ -1,13 +1,5 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
-import { clerkMiddleware } from '@clerk/nextjs/server';
-
-// Check if Clerk is configured
-const isClerkConfigured =
-  process.env.CLERK_SECRET_KEY &&
-  process.env.CLERK_SECRET_KEY !== 'sk_test_placeholder' &&
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY &&
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY !== 'pk_test_placeholder';
+import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
 
 /**
  * Parse subdomain to extract slug and clubNumber
@@ -33,95 +25,116 @@ function parsePublicSubdomain(
   return { slug, clubNumber };
 }
 
-/**
- * Extract subdomain from hostname
- * Returns null for localhost, app subdomain, or root domain
- */
-function getSubdomain(host: string): string | null {
-  // Handle localhost and development
-  if (host.includes('localhost') || host.includes('127.0.0.1')) {
-    return null;
-  }
+export async function middleware(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request });
+  const hostname = request.headers.get('host') || '';
+  const pathname = request.nextUrl.pathname;
 
-  const parts = host.split('.');
+  // ============================================
+  // 1. SUBDOMAIN ROUTING (Public Websites)
+  // ============================================
+  // Format: {slug}-{clubnummer}.lions-hub.de
+  const isLocalhost = hostname.includes('localhost') || hostname.includes('127.0.0.1');
+  const isAppSubdomain = hostname.startsWith('app.');
+  const isMainDomain = hostname === 'lions-hub.de' || hostname === 'www.lions-hub.de';
 
-  // Need at least 3 parts for subdomain (e.g., lauf-123456.lions-hub.de)
-  if (parts.length < 3) {
-    return null;
-  }
-
-  const subdomain = parts[0];
-
-  // "app" subdomain is reserved for the main application
-  if (subdomain === 'app' || subdomain === 'www') {
-    return null;
-  }
-
-  return subdomain;
-}
-
-function handleRequest(request: NextRequest): NextResponse {
-  const { nextUrl, headers } = request;
-  const host = headers.get('host') || 'localhost:3000';
-
-  // Check for public club website subdomain
-  const subdomain = getSubdomain(host);
-
-  if (subdomain) {
+  // Wenn es eine Club-Subdomain ist (nicht app., nicht localhost, nicht main)
+  if (!isLocalhost && !isAppSubdomain && !isMainDomain && hostname.includes('.')) {
+    const subdomain = hostname.split('.')[0];
     const parsed = parsePublicSubdomain(subdomain);
 
     if (parsed) {
-      // Rewrite to /public/[slug]/[clubNumber]/...
       const { slug, clubNumber } = parsed;
-      const pathname = nextUrl.pathname;
+      // Rewrite zu Public Website Route
+      const url = request.nextUrl.clone();
+      url.pathname = `/public/${slug}/${clubNumber}${pathname === '/' ? '' : pathname}`;
 
-      // Build the new URL
-      const newPathname = `/public/${slug}/${clubNumber}${pathname === '/' ? '' : pathname}`;
-
-      const url = nextUrl.clone();
-      url.pathname = newPathname;
-
-      // Rewrite the request (internal redirect, URL stays the same for user)
       const response = NextResponse.rewrite(url);
       response.headers.set('x-tenant-slug', slug);
       response.headers.set('x-club-number', clubNumber);
       response.headers.set('x-is-public-site', 'true');
-
       return response;
     }
   }
 
-  // Standard app routing (app.lions-hub.de or localhost)
-  // Get tenant from query parameter for development
-  let tenantSlug = nextUrl.searchParams.get('tenant') || 'lauf'; // Default to 'lauf' for dev
+  // ============================================
+  // 2. SUPABASE AUTH SESSION
+  // ============================================
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+          supabaseResponse = NextResponse.next({ request });
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          );
+        },
+      },
+    }
+  );
+
+  // Session abrufen (wichtig: refresht auch abgelaufene Tokens)
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // ============================================
+  // 3. ROUTE PROTECTION
+  // ============================================
+  const publicRoutes = [
+    '/sign-in',
+    '/sign-up',
+    '/forgot-password',
+    '/reset-password',
+    '/auth/callback',
+    '/public',
+    '/invite',
+  ];
+
+  const isPublicRoute =
+    publicRoutes.some((route) => pathname.startsWith(route)) || pathname === '/';
+
+  // Nicht eingeloggt und geschützte Route → Redirect zu Sign-In
+  if (!user && !isPublicRoute) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/sign-in';
+    url.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(url);
+  }
+
+  // Eingeloggt und auf Auth-Seite → Redirect zu Dashboard
+  if (user && (pathname === '/sign-in' || pathname === '/sign-up')) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/dashboard';
+    return NextResponse.redirect(url);
+  }
+
+  // ============================================
+  // 4. SET TENANT HEADERS FOR APP ROUTES
+  // ============================================
+  // Get tenant from query parameter for development, default to 'lauf'
+  const tenantSlug = request.nextUrl.searchParams.get('tenant') || 'lauf';
 
   // Get locale from cookie, header, or default
-  const acceptLanguage = headers.get('accept-language') || '';
+  const acceptLanguage = request.headers.get('accept-language') || '';
   const locale = acceptLanguage.startsWith('en') ? 'en' : 'de';
 
-  // Clone the response and set headers for downstream use
-  const response = NextResponse.next();
-  response.headers.set('x-tenant-slug', tenantSlug);
-  response.headers.set('x-locale', locale);
-  response.headers.set('x-is-public-site', 'false');
+  // Set headers for downstream use
+  supabaseResponse.headers.set('x-tenant-slug', tenantSlug);
+  supabaseResponse.headers.set('x-locale', locale);
+  supabaseResponse.headers.set('x-is-public-site', 'false');
 
-  return response;
+  return supabaseResponse;
 }
-
-// Export middleware - use Clerk if configured, otherwise just handle tenant/locale
-export default isClerkConfigured
-  ? clerkMiddleware((_auth, request) => {
-      return handleRequest(request);
-    })
-  : function middleware(request: NextRequest) {
-      return handleRequest(request);
-    };
 
 export const config = {
   matcher: [
-    // Skip static files and internal Next.js routes
-    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Always run for API routes
-    '/(api|trpc)(.*)',
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };
