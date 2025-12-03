@@ -20,6 +20,147 @@ function getSupabaseAdmin() {
   });
 }
 
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: 'Nicht autorisiert' }, { status: 401 });
+    }
+
+    // Aktuellen Member laden
+    const currentMember = await db.member.findUnique({
+      where: { authUserId: user.id },
+      include: {
+        assignedRole: {
+          include: { rolePermissions: { include: { permission: true } } },
+        },
+      },
+    });
+
+    if (!currentMember) {
+      return NextResponse.json({ error: 'Mitglied nicht gefunden' }, { status: 404 });
+    }
+
+    // Berechtigung prüfen
+    const permissions =
+      currentMember.assignedRole?.rolePermissions.map((rp) => rp.permission.code) || [];
+    const canEditMembers =
+      permissions.includes('admin.users') || permissions.includes('members.edit');
+
+    if (!canEditMembers) {
+      return NextResponse.json(
+        { error: 'Keine Berechtigung zum Bearbeiten von Mitgliedern' },
+        { status: 403 }
+      );
+    }
+
+    // Zu bearbeitendes Mitglied laden
+    const memberToEdit = await db.member.findUnique({
+      where: { id },
+      include: { assignedRole: true },
+    });
+
+    if (!memberToEdit) {
+      return NextResponse.json({ error: 'Mitglied nicht gefunden' }, { status: 404 });
+    }
+
+    // Prüfen ob gleiches Tenant
+    if (memberToEdit.tenantId !== currentMember.tenantId) {
+      return NextResponse.json(
+        { error: 'Keine Berechtigung für dieses Mitglied' },
+        { status: 403 }
+      );
+    }
+
+    const body = await request.json();
+    const {
+      firstName,
+      lastName,
+      phone,
+      memberNumber,
+      joinDate,
+      sponsor,
+      locale,
+      emailNotifications,
+      isActive,
+      roleId,
+    } = body;
+
+    // Validate required fields
+    if (!firstName || !lastName) {
+      return NextResponse.json(
+        { error: 'Vorname und Nachname sind erforderlich' },
+        { status: 400 }
+      );
+    }
+
+    // Prevent changing own role
+    const isCurrentUser = memberToEdit.id === currentMember.id;
+    const newRoleId = isCurrentUser ? memberToEdit.roleId : roleId || null;
+    const newIsActive = isCurrentUser ? memberToEdit.isActive : isActive ?? memberToEdit.isActive;
+
+    // If changing role, check if it would remove the last admin
+    if (!isCurrentUser && roleId !== memberToEdit.roleId && memberToEdit.assignedRole?.type === 'ADMIN') {
+      const adminCount = await db.member.count({
+        where: {
+          tenantId: currentMember.tenantId,
+          isActive: true,
+          assignedRole: { type: 'ADMIN' },
+        },
+      });
+
+      if (adminCount <= 1) {
+        // Check if new role is also admin
+        const newRole = roleId ? await db.role.findUnique({ where: { id: roleId } }) : null;
+        if (!newRole || newRole.type !== 'ADMIN') {
+          return NextResponse.json(
+            { error: 'Der letzte Administrator kann nicht zu einer anderen Rolle geändert werden' },
+            { status: 400 }
+          );
+        }
+      }
+    }
+
+    // Update member
+    const updatedMember = await db.member.update({
+      where: { id },
+      data: {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        phone: phone?.trim() || null,
+        memberNumber: memberNumber?.trim() || null,
+        joinDate: joinDate ? new Date(joinDate) : null,
+        sponsor: sponsor?.trim() || null,
+        locale: locale || 'de',
+        emailNotifications: emailNotifications ?? true,
+        isActive: newIsActive,
+        roleId: newRoleId,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      member: {
+        id: updatedMember.id,
+        firstName: updatedMember.firstName,
+        lastName: updatedMember.lastName,
+      },
+    });
+  } catch (error) {
+    console.error('Error updating member:', error);
+    return NextResponse.json({ error: 'Fehler beim Aktualisieren des Mitglieds' }, { status: 500 });
+  }
+}
+
 export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }

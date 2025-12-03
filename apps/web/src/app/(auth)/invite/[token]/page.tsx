@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 interface InvitationData {
@@ -15,6 +16,12 @@ interface InvitationData {
 }
 
 export default function InviteAcceptPage() {
+  const t = useTranslations('auth');
+  const tInvite = useTranslations('auth.invite');
+  const tErrors = useTranslations('errors');
+  const tCommon = useTranslations('common');
+  const tMembers = useTranslations('members');
+
   const [invitation, setInvitation] = useState<InvitationData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,19 +44,19 @@ export default function InviteAcceptPage() {
         const data = await response.json();
 
         if (!response.ok) {
-          setError(data.error || 'Einladung nicht gefunden');
+          setError(data.error || tInvite('notFound'));
         } else {
           setInvitation(data);
         }
       } catch {
-        setError('Fehler beim Laden der Einladung');
+        setError(tErrors('general'));
       } finally {
         setLoading(false);
       }
     }
 
     loadInvitation();
-  }, [token]);
+  }, [token, tInvite, tErrors]);
 
   const handleAcceptInvitation = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,19 +65,19 @@ export default function InviteAcceptPage() {
 
     // Validierung
     if (password !== confirmPassword) {
-      setError('Die Passwörter stimmen nicht überein');
+      setError(tErrors('passwordsDoNotMatch'));
       setSubmitting(false);
       return;
     }
 
     if (password.length < 8) {
-      setError('Das Passwort muss mindestens 8 Zeichen lang sein');
+      setError(tErrors('passwordTooShort'));
       setSubmitting(false);
       return;
     }
 
     if (!firstName.trim() || !lastName.trim()) {
-      setError('Bitte geben Sie Ihren Namen ein');
+      setError(tInvite('nameRequired'));
       setSubmitting(false);
       return;
     }
@@ -91,9 +98,7 @@ export default function InviteAcceptPage() {
 
       if (authError) {
         if (authError.message.includes('already registered')) {
-          setError(
-            'Diese E-Mail-Adresse ist bereits registriert. Bitte melden Sie sich an.'
-          );
+          setError(tInvite('alreadyRegistered'));
         } else {
           setError(authError.message);
         }
@@ -114,14 +119,14 @@ export default function InviteAcceptPage() {
 
       if (!response.ok) {
         const data = await response.json();
-        setError(data.error || 'Fehler beim Aktivieren des Accounts');
+        setError(data.error || tInvite('acceptError'));
         setSubmitting(false);
         return;
       }
 
       setSuccess(true);
     } catch {
-      setError('Ein unerwarteter Fehler ist aufgetreten');
+      setError(tErrors('general'));
       setSubmitting(false);
     }
   };
@@ -132,7 +137,7 @@ export default function InviteAcceptPage() {
       <div className="max-w-md w-full mx-4">
         <div className="bg-white rounded-xl shadow-2xl p-8 text-center">
           <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600">Einladung wird geladen...</p>
+          <p className="text-gray-600">{tCommon('loading')}</p>
         </div>
       </div>
     );
@@ -158,14 +163,13 @@ export default function InviteAcceptPage() {
               />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Einladung ungültig</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">{tInvite('invalid')}</h2>
           <p className="text-gray-600 mb-4">{error}</p>
           <p className="text-sm text-gray-500 mb-4">
-            Mögliche Gründe: Die Einladung ist abgelaufen, wurde bereits verwendet
-            oder existiert nicht.
+            {tInvite('invalidReasons')}
           </p>
           <Link href="/sign-in" className="text-blue-600 hover:underline">
-            Zur Anmeldung
+            {t('signIn')}
           </Link>
         </div>
       </div>
@@ -193,18 +197,16 @@ export default function InviteAcceptPage() {
             </svg>
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Willkommen bei Lions Hub!
+            {tInvite('welcomeToLionsHub')}
           </h2>
           <p className="text-gray-600 mb-4">
-            Ihr Account wurde erfolgreich erstellt. Bitte bestätigen Sie Ihre
-            E-Mail-Adresse, indem Sie auf den Link in der Bestätigungs-E-Mail
-            klicken.
+            {tInvite('accountCreated')}
           </p>
           <Link
             href="/sign-in"
             className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Zur Anmeldung
+            {t('signIn')}
           </Link>
         </div>
       </div>
@@ -223,18 +225,17 @@ export default function InviteAcceptPage() {
         </div>
 
         <h1 className="text-2xl font-bold text-center text-gray-900 mb-2">
-          Einladung annehmen
+          {tInvite('acceptInvitation')}
         </h1>
 
         {/* Einladungs-Info */}
         <div className="bg-gray-50 rounded-lg p-4 mb-6">
           <p className="text-sm text-gray-600 mb-2">
-            Sie wurden eingeladen, dem Club beizutreten:
+            {tInvite('youAreInvited')}
           </p>
           <p className="font-semibold text-gray-900">{invitation?.tenantName}</p>
           <p className="text-sm text-gray-500 mt-1">
-            Rolle: {invitation?.roleName} • Eingeladen von:{' '}
-            {invitation?.invitedByName}
+            {tMembers('role')}: {invitation?.roleName} • {tInvite('invitedBy')}: {invitation?.invitedByName}
           </p>
         </div>
 
@@ -248,7 +249,7 @@ export default function InviteAcceptPage() {
           {/* Email (nur Anzeige) */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              E-Mail-Adresse
+              {t('email')}
             </label>
             <input
               type="email"
@@ -262,27 +263,27 @@ export default function InviteAcceptPage() {
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Vorname
+                {t('firstName')}
               </label>
               <input
                 type="text"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Max"
+                placeholder={t('firstNamePlaceholder')}
                 required
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nachname
+                {t('lastName')}
               </label>
               <input
                 type="text"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Mustermann"
+                placeholder={t('lastNamePlaceholder')}
                 required
               />
             </div>
@@ -291,28 +292,28 @@ export default function InviteAcceptPage() {
           {/* Passwort */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Passwort
+              {t('password')}
             </label>
             <input
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Mindestens 8 Zeichen"
+              placeholder={t('passwordPlaceholder')}
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Passwort bestätigen
+              {t('confirmPassword')}
             </label>
             <input
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Passwort wiederholen"
+              placeholder={t('confirmPasswordPlaceholder')}
               required
             />
           </div>
@@ -343,19 +344,19 @@ export default function InviteAcceptPage() {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                Wird registriert...
+                {tCommon('loading')}
               </span>
             ) : (
-              'Registrieren & Einladung annehmen'
+              tInvite('registerAndAccept')
             )}
           </button>
         </form>
       </div>
 
       <p className="mt-6 text-center text-white/80 text-sm">
-        Bereits registriert?{' '}
+        {tInvite('alreadyRegisteredQuestion')}{' '}
         <Link href="/sign-in" className="text-white font-medium hover:underline">
-          Jetzt anmelden
+          {t('signIn')}
         </Link>
       </p>
     </div>

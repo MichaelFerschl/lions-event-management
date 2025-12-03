@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { getCurrentTenant } from '@/lib/tenant';
 import { createClient } from '@/lib/supabase/server';
-import { signOut } from './actions/auth';
+import { LanguageSwitcherCompact } from '@/components/language-switcher';
+import { UserNav } from '@/components/auth/user-nav';
 
 export default async function DashboardLayout({
   children,
@@ -74,18 +75,9 @@ export default async function DashboardLayout({
               {tenant.name}
             </h2>
             <div className="flex items-center space-x-4">
+              <LanguageSwitcherCompact />
               {user ? (
-                <>
-                  <span className="text-sm text-gray-600">{user.email}</span>
-                  <form action={signOut}>
-                    <button
-                      type="submit"
-                      className="text-sm text-gray-500 hover:text-gray-700 px-3 py-1.5 rounded-md hover:bg-gray-100 transition-colors"
-                    >
-                      Abmelden
-                    </button>
-                  </form>
-                </>
+                <UserNav />
               ) : (
                 <Link
                   href="/sign-in"

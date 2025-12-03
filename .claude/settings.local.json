@@ -15,7 +15,10 @@
       "Bash(pnpm add:*)",
       "Bash(mkdir:*)",
       "Bash(npx prisma db push:*)",
-      "Bash(npx prisma generate:*)"
+      "Bash(npx prisma generate:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(curl:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []

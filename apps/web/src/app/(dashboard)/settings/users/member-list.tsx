@@ -1,6 +1,8 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslations } from 'next-intl';
+import Link from 'next/link';
 
 interface Member {
   id: string;
@@ -25,12 +27,16 @@ export function MemberList({
   currentMemberId,
   canDelete,
 }: MemberListProps) {
+  const t = useTranslations('users');
+  const tMembers = useTranslations('members');
+  const tCommon = useTranslations('common');
   const [members, setMembers] = useState(initialMembers);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleDelete = async (member: Member) => {
-    const confirmMessage = `Möchten Sie "${member.firstName} ${member.lastName}" (${member.email}) wirklich löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden. Der Benutzer wird auch aus dem Authentifizierungssystem entfernt.`;
+    const memberName = `${member.firstName} ${member.lastName}`;
+    const confirmMessage = `${t('delete.confirm', { name: memberName, email: member.email })}\n\n${t('delete.warning')}`;
 
     if (!confirm(confirmMessage)) {
       return;
@@ -47,14 +53,14 @@ export function MemberList({
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Fehler beim Löschen');
+        setError(data.error || t('delete.error'));
         return;
       }
 
       // Aus der Liste entfernen
       setMembers(members.filter((m) => m.id !== member.id));
     } catch {
-      setError('Ein unerwarteter Fehler ist aufgetreten');
+      setError(t('delete.error'));
     } finally {
       setDeletingId(null);
     }
@@ -65,14 +71,14 @@ export function MemberList({
   return (
     <div className="bg-white rounded-lg shadow">
       <div className="px-4 py-3 border-b border-gray-200">
-        <h2 className="font-semibold text-gray-900">Mitglieder ({members.length})</h2>
+        <h2 className="font-semibold text-gray-900">{t('membersCount', { count: members.length })}</h2>
       </div>
 
       {error && (
         <div className="mx-4 mt-4 bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-sm">
           {error}
           <button onClick={() => setError(null)} className="ml-2 text-red-800 hover:underline">
-            Schließen
+            {tCommon('close')}
           </button>
         </div>
       )}
@@ -80,7 +86,7 @@ export function MemberList({
       <div className="divide-y divide-gray-200">
         {members.length === 0 ? (
           <div className="px-4 py-8 text-center text-gray-500">
-            Noch keine Mitglieder vorhanden
+            {tMembers('noMembers')}
           </div>
         ) : (
           members.map((member) => {
@@ -91,32 +97,35 @@ export function MemberList({
             return (
               <div
                 key={member.id}
-                className="px-4 py-4 flex items-center justify-between hover:bg-gray-50"
+                className="px-4 py-4 flex items-center justify-between hover:bg-gray-50 group"
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                <Link
+                  href={`/settings/users/${member.id}`}
+                  className="flex items-center gap-4 flex-1 min-w-0"
+                >
+                  <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
                     <span className="text-blue-600 font-medium">
                       {member.firstName[0]}
                       {member.lastName[0]}
                     </span>
                   </div>
-                  <div>
-                    <div className="font-medium text-gray-900">
+                  <div className="min-w-0">
+                    <div className="font-medium text-gray-900 group-hover:text-lions-blue">
                       {member.firstName} {member.lastName}
                       {isCurrentUser && (
                         <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">
-                          Du
+                          {tMembers('you')}
                         </span>
                       )}
                       {isLastAdmin && (
                         <span className="ml-2 text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">
-                          Letzter Admin
+                          {tMembers('lastAdmin')}
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-gray-500">{member.email}</div>
+                    <div className="text-sm text-gray-500 truncate">{member.email}</div>
                   </div>
-                </div>
+                </Link>
                 <div className="flex items-center gap-4">
                   <span
                     className={`text-sm px-2 py-1 rounded ${
@@ -135,7 +144,7 @@ export function MemberList({
                   </span>
                   <span
                     className={`w-2 h-2 rounded-full ${member.isActive ? 'bg-green-500' : 'bg-gray-300'}`}
-                    title={member.isActive ? 'Aktiv' : 'Inaktiv'}
+                    title={member.isActive ? tMembers('statuses.active') : tMembers('statuses.inactive')}
                   />
 
                   {/* Löschen-Button */}
@@ -150,8 +159,8 @@ export function MemberList({
                       } disabled:opacity-50`}
                       title={
                         isLastAdmin
-                          ? 'Letzter Administrator kann nicht gelöscht werden'
-                          : 'Mitglied löschen'
+                          ? t('delete.lastAdminError')
+                          : t('delete.title')
                       }
                     >
                       {deletingId === member.id ? (

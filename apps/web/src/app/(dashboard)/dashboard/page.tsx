@@ -1,15 +1,19 @@
 import Link from 'next/link';
-import { headers } from 'next/headers';
 import { db } from '@/lib/db';
 import { getCurrentTenant } from '@/lib/tenant';
+import { getTranslations } from 'next-intl/server';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { EventCard } from '@/components/events/event-card';
 import { formatDate, formatTime } from '@/lib/format';
 import { EventWithCount } from '@/types';
 import { UpcomingEventsWidget } from '../planning/components/upcoming-events-widget';
+import { headers } from 'next/headers';
 
 export default async function DashboardPage() {
+  const t = await getTranslations('dashboard');
+  const tPlanning = await getTranslations('planning');
+
   const tenant = await getCurrentTenant();
   const headersList = await headers();
   const locale = headersList.get('x-locale') || 'de';
@@ -70,14 +74,10 @@ export default async function DashboardPage() {
       {/* Welcome Header */}
       <div>
         <h1 className="text-3xl font-bold text-gray-900">
-          {locale === 'en'
-            ? `Welcome to ${tenant.name}`
-            : `Willkommen bei ${tenant.name}`}
+          {t('welcome', { name: tenant.name })}
         </h1>
         <p className="text-gray-600 mt-2">
-          {locale === 'en'
-            ? 'Here is an overview of your club activities'
-            : 'Hier ist eine Übersicht über Ihre Club-Aktivitäten'}
+          {t('overview')}
         </p>
       </div>
 
@@ -87,7 +87,7 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium text-gray-600">
-              {locale === 'en' ? 'Next Event' : 'Nächste Veranstaltung'}
+              {t('nextEvent')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -105,9 +105,7 @@ export default async function DashboardPage() {
               </div>
             ) : (
               <div className="text-gray-500">
-                {locale === 'en'
-                  ? 'No upcoming events'
-                  : 'Keine kommenden Veranstaltungen'}
+                {t('noUpcomingEvents')}
               </div>
             )}
           </CardContent>
@@ -117,7 +115,7 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium text-gray-600">
-              {locale === 'en' ? 'Active Members' : 'Aktive Mitglieder'}
+              {t('activeMembers')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -125,7 +123,7 @@ export default async function DashboardPage() {
               {totalMembers}
             </div>
             <div className="text-sm text-gray-600 mt-1">
-              {locale === 'en' ? 'Members' : 'Mitglieder'}
+              {t('members')}
             </div>
           </CardContent>
         </Card>
@@ -134,9 +132,7 @@ export default async function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium text-gray-600">
-              {locale === 'en'
-                ? 'Open Registrations'
-                : 'Offene Anmeldungen'}
+              {t('openRegistrations')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -144,7 +140,7 @@ export default async function DashboardPage() {
               {openRegistrations}
             </div>
             <div className="text-sm text-gray-600 mt-1">
-              {locale === 'en' ? 'Registrations' : 'Anmeldungen'}
+              {t('registrations')}
             </div>
           </CardContent>
         </Card>
@@ -154,11 +150,11 @@ export default async function DashboardPage() {
       <div>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-gray-900">
-            {locale === 'en' ? 'Upcoming Events' : 'Kommende Veranstaltungen'}
+            {t('upcomingEvents')}
           </h2>
           <Link href="/events">
             <Button variant="outline" size="sm">
-              {locale === 'en' ? 'View All' : 'Alle anzeigen'}
+              {t('viewAll')}
             </Button>
           </Link>
         </div>
@@ -172,9 +168,7 @@ export default async function DashboardPage() {
         ) : (
           <Card>
             <CardContent className="py-8 text-center text-gray-500">
-              {locale === 'en'
-                ? 'No upcoming events. Create your first event!'
-                : 'Keine kommenden Veranstaltungen. Erstellen Sie Ihre erste Veranstaltung!'}
+              {t('noEventsYet')}
             </CardContent>
           </Card>
         )}
@@ -188,7 +182,7 @@ export default async function DashboardPage() {
         <div className="bg-white rounded-lg shadow">
           <div className="px-4 py-3 border-b border-gray-200">
             <h3 className="font-medium text-gray-900">
-              {locale === 'en' ? 'Quick Actions' : 'Schnellzugriff'}
+              {t('quickActions')}
             </h3>
           </div>
           <div className="p-4 grid grid-cols-2 gap-4">
@@ -209,7 +203,7 @@ export default async function DashboardPage() {
                     />
                   </svg>
                   <div className="text-sm font-medium text-gray-900">
-                    {locale === 'en' ? 'New Event' : 'Neue Veranstaltung'}
+                    {t('newEvent')}
                   </div>
                 </CardContent>
               </Card>
@@ -232,7 +226,7 @@ export default async function DashboardPage() {
                     />
                   </svg>
                   <div className="text-sm font-medium text-gray-900">
-                    {locale === 'en' ? 'Plan Lions Year' : 'Lionsjahr planen'}
+                    {t('planLionsYear')}
                   </div>
                 </CardContent>
               </Card>
@@ -255,7 +249,7 @@ export default async function DashboardPage() {
                     />
                   </svg>
                   <div className="text-sm font-medium text-gray-900">
-                    {locale === 'en' ? 'Lions Years' : 'Lionsjahre'}
+                    {tPlanning('lionsYears')}
                   </div>
                 </CardContent>
               </Card>
@@ -284,7 +278,7 @@ export default async function DashboardPage() {
                     />
                   </svg>
                   <div className="text-sm font-medium text-gray-900">
-                    {locale === 'en' ? 'Settings' : 'Stammdaten'}
+                    {t('masterData')}
                   </div>
                 </CardContent>
               </Card>

@@ -1,5 +1,6 @@
 import { db } from '@/lib/db';
 import { createClient } from '@/lib/supabase/server';
+import { getTranslations } from 'next-intl/server';
 import { redirect } from 'next/navigation';
 import { InviteUserButton } from './invite-button';
 import { InvitationList } from './invitation-list';
@@ -33,6 +34,7 @@ export default async function UsersPage() {
   // Berechtigungen prüfen
   const permissions =
     currentMember.assignedRole?.rolePermissions.map((rp) => rp.permission.code) || [];
+
   const canManageUsers = permissions.some(
     (p) => p === 'admin.users' || p === 'members.invite' || p.startsWith('members.')
   );
@@ -42,6 +44,9 @@ export default async function UsersPage() {
   if (!canManageUsers) {
     redirect('/dashboard');
   }
+
+  // Übersetzungen laden
+  const t = await getTranslations('users');
 
   // Mitglieder laden
   const members = await db.member.findMany({
@@ -64,6 +69,7 @@ export default async function UsersPage() {
   const invitationsForClient = pendingInvitations.map((inv) => ({
     id: inv.id,
     email: inv.email,
+    token: inv.token,
     roleType: inv.roleType,
     invitedBy: {
       firstName: inv.invitedBy.firstName,
@@ -90,8 +96,8 @@ export default async function UsersPage() {
     <div className="max-w-6xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Benutzerverwaltung</h1>
-          <p className="text-gray-600">Mitglieder und Einladungen verwalten</p>
+          <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
+          <p className="text-gray-600">{t('subtitle')}</p>
         </div>
         <InviteUserButton />
       </div>

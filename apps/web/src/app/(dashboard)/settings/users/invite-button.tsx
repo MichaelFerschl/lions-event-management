@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface SuccessData {
   email: string;
@@ -10,6 +11,9 @@ interface SuccessData {
 }
 
 export function InviteUserButton() {
+  const t = useTranslations('users.invite');
+  const tMembers = useTranslations('members');
+  const tCommon = useTranslations('common');
   const [isOpen, setIsOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [roleType, setRoleType] = useState('MEMBER');
@@ -33,7 +37,7 @@ export function InviteUserButton() {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Fehler beim Erstellen der Einladung');
+        setError(data.error || t('error'));
         setLoading(false);
         return;
       }
@@ -44,7 +48,7 @@ export function InviteUserButton() {
         emailSent: data.emailSent,
       });
     } catch {
-      setError('Ein unerwarteter Fehler ist aufgetreten');
+      setError(t('error'));
     } finally {
       setLoading(false);
     }
@@ -75,12 +79,12 @@ export function InviteUserButton() {
   };
 
   const roleOptions = [
-    { value: 'ADMIN', label: 'Administrator', description: 'Vollzugriff auf alle Funktionen' },
-    { value: 'PRESIDENT', label: 'Präsident', description: 'Leitung des Clubs' },
-    { value: 'SECRETARY', label: 'Sekretär', description: 'Verwaltung und Protokolle' },
-    { value: 'BOARD', label: 'Vorstand', description: 'Vorstandsmitglied' },
-    { value: 'MEMBER', label: 'Mitglied', description: 'Reguläres Clubmitglied' },
-    { value: 'GUEST', label: 'Gast', description: 'Eingeschränkter Zugriff' },
+    { value: 'ADMIN' },
+    { value: 'PRESIDENT' },
+    { value: 'SECRETARY' },
+    { value: 'BOARD' },
+    { value: 'MEMBER' },
+    { value: 'GUEST' },
   ];
 
   return (
@@ -97,14 +101,14 @@ export function InviteUserButton() {
             d="M12 6v6m0 0v6m0-6h6m-6 0H6"
           />
         </svg>
-        Benutzer einladen
+        {t('button')}
       </button>
 
       {isOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl shadow-2xl p-6 max-w-md w-full mx-4">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-900">Neuen Benutzer einladen</h2>
+              <h2 className="text-xl font-bold text-gray-900">{t('title')}</h2>
               <button onClick={handleClose} className="text-gray-400 hover:text-gray-600">
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -156,29 +160,22 @@ export function InviteUserButton() {
                     )}
                     <span className="font-medium">
                       {success.emailSent
-                        ? 'Einladung versendet!'
-                        : 'Einladung erstellt (Email fehlgeschlagen)'}
+                        ? t('success')
+                        : t('errorEmailFailed')}
                     </span>
                   </div>
                   <p
                     className={`text-sm ${success.emailSent ? 'text-green-600' : 'text-yellow-600'}`}
                   >
-                    {success.emailSent ? (
-                      <>
-                        Eine Einladungs-Email wurde an <strong>{success.email}</strong> gesendet.
-                      </>
-                    ) : (
-                      <>
-                        Die Einladung wurde erstellt, aber die Email konnte nicht gesendet werden.
-                        Bitte teilen Sie den Link manuell.
-                      </>
-                    )}
+                    {success.emailSent
+                      ? t('successMessage', { email: success.email })
+                      : t('errorEmailFailed')}
                   </p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Einladungs-Link (7 Tage gültig)
+                    {t('linkLabel')}
                   </label>
                   <div className="flex gap-2">
                     <input
@@ -190,7 +187,7 @@ export function InviteUserButton() {
                     <button
                       onClick={() => copyToClipboard(success.inviteUrl)}
                       className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                      title="Kopieren"
+                      title={t('copyLink')}
                     >
                       <svg
                         className="w-5 h-5 text-gray-600"
@@ -208,9 +205,7 @@ export function InviteUserButton() {
                     </button>
                   </div>
                   <p className="text-xs text-gray-500 mt-1">
-                    {success.emailSent
-                      ? 'Der Link wurde auch per Email versendet.'
-                      : 'Bitte senden Sie diesen Link manuell an das neue Mitglied.'}
+                    {t('expiresIn')}
                   </p>
                 </div>
 
@@ -219,13 +214,13 @@ export function InviteUserButton() {
                     onClick={handleInviteAnother}
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                   >
-                    Weiteres Mitglied einladen
+                    {t('inviteAnother')}
                   </button>
                   <button
                     onClick={handleClose}
                     className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    Schließen
+                    {tCommon('close')}
                   </button>
                 </div>
               </div>
@@ -239,20 +234,20 @@ export function InviteUserButton() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    E-Mail-Adresse
+                    {t('email')}
                   </label>
                   <input
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="name@beispiel.de"
+                    placeholder={t('emailPlaceholder')}
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Rolle</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('role')}</label>
                   <select
                     value={roleType}
                     onChange={(e) => setRoleType(e.target.value)}
@@ -260,13 +255,10 @@ export function InviteUserButton() {
                   >
                     {roleOptions.map((option) => (
                       <option key={option.value} value={option.value}>
-                        {option.label}
+                        {tMembers(`roles.${option.value}`)}
                       </option>
                     ))}
                   </select>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {roleOptions.find((r) => r.value === roleType)?.description}
-                  </p>
                 </div>
 
                 <div className="flex gap-3 pt-2">
@@ -275,14 +267,14 @@ export function InviteUserButton() {
                     onClick={handleClose}
                     className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    Abbrechen
+                    {tCommon('cancel')}
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
                     className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
                   >
-                    {loading ? 'Wird gesendet...' : 'Einladung senden'}
+                    {loading ? t('sending') : t('send')}
                   </button>
                 </div>
               </form>

@@ -121,9 +121,11 @@ export async function middleware(request: NextRequest) {
   // Get tenant from query parameter for development, default to 'lauf'
   const tenantSlug = request.nextUrl.searchParams.get('tenant') || 'lauf';
 
-  // Get locale from cookie, header, or default
+  // Get locale: priority is cookie > accept-language header > default 'de'
+  const localeCookie = request.cookies.get('locale')?.value;
   const acceptLanguage = request.headers.get('accept-language') || '';
-  const locale = acceptLanguage.startsWith('en') ? 'en' : 'de';
+  const browserLocale = acceptLanguage.startsWith('en') ? 'en' : 'de';
+  const locale = localeCookie || browserLocale;
 
   // Set headers for downstream use
   supabaseResponse.headers.set('x-tenant-slug', tenantSlug);

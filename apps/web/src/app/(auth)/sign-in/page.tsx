@@ -3,9 +3,12 @@
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 
 export default function SignInPage() {
+  const t = useTranslations('auth');
+  const tCommon = useTranslations('common');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -27,7 +30,7 @@ export default function SignInPage() {
 
     if (error) {
       if (error.message === 'Invalid login credentials') {
-        setError('Ungültige E-Mail oder Passwort');
+        setError(t('invalidCredentials'));
       } else {
         setError(error.message);
       }
@@ -49,10 +52,10 @@ export default function SignInPage() {
         </div>
 
         <h1 className="text-2xl font-bold text-center text-gray-900 mb-2">
-          Willkommen zurück
+          {t('welcomeBack')}
         </h1>
         <p className="text-center text-gray-600 mb-6">
-          Melden Sie sich bei Lions Hub an
+          {t('signInToLionsHub')}
         </p>
 
         <form onSubmit={handleSignIn} className="space-y-4">
@@ -64,21 +67,21 @@ export default function SignInPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              E-Mail-Adresse
+              {t('email')}
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="ihre@email.de"
+              placeholder={t('emailPlaceholder')}
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Passwort
+              {t('password')}
             </label>
             <input
               type="password"
@@ -96,13 +99,13 @@ export default function SignInPage() {
                 type="checkbox"
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="ml-2 text-sm text-gray-600">Angemeldet bleiben</span>
+              <span className="ml-2 text-sm text-gray-600">{t('rememberMe')}</span>
             </label>
             <Link
               href="/forgot-password"
               className="text-sm text-blue-600 hover:underline"
             >
-              Passwort vergessen?
+              {t('forgotPassword')}
             </Link>
           </div>
 
@@ -132,19 +135,19 @@ export default function SignInPage() {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                Wird angemeldet...
+                {tCommon('loading')}
               </span>
             ) : (
-              'Anmelden'
+              t('signIn')
             )}
           </button>
         </form>
       </div>
 
       <p className="mt-6 text-center text-white/80 text-sm">
-        Sie haben eine Einladung erhalten?{' '}
+        {t('haveInvitation')}{' '}
         <Link href="/sign-up" className="text-white font-medium hover:underline">
-          Jetzt registrieren
+          {t('registerNow')}
         </Link>
       </p>
     </div>

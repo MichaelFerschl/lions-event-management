@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { db } from '@/lib/db';
 import { getCurrentTenant } from '@/lib/tenant';
+import { getTranslations } from 'next-intl/server';
 
 async function getPlanningStats() {
   const tenant = await getCurrentTenant();
@@ -22,28 +23,30 @@ async function getPlanningStats() {
 }
 
 export default async function PlanningPage() {
+  const t = await getTranslations('planning');
+  const tDashboard = await getTranslations('dashboard');
   const stats = await getPlanningStats();
 
   const cards = [
     {
-      title: 'Terminarten',
-      description: 'Kategorien für die Klassifizierung von Terminen',
+      title: t('categories'),
+      description: t('category.title'),
       count: stats.categoriesCount,
       href: '/planning/categories',
       icon: 'M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z',
       color: 'bg-blue-500',
     },
     {
-      title: 'Terminvorlagen',
-      description: 'Wiederverwendbare Vorlagen für wiederkehrende Events',
+      title: t('templates'),
+      description: t('template.title'),
       count: stats.templatesCount,
       href: '/planning/templates',
       icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
       color: 'bg-purple-500',
     },
     {
-      title: 'Regeltermine',
-      description: 'Regelmäßige Termine wie "Erster Dienstag im Monat"',
+      title: t('recurringRules'),
+      description: t('recurringRule.title'),
       count: stats.recurringRulesCount,
       href: '/planning/recurring-rules',
       icon: 'M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15',
@@ -56,9 +59,9 @@ export default async function PlanningPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Jahresplanung</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('title')}</h1>
           <p className="text-gray-600 mt-1">
-            Verwalten Sie Stammdaten und planen Sie das Lionsjahr
+            {t('subtitle')}
           </p>
         </div>
         <Link
@@ -78,30 +81,28 @@ export default async function PlanningPage() {
               d="M12 6v6m0 0v6m0-6h6m-6 0H6"
             />
           </svg>
-          Neues Lionsjahr planen
+          {t('createYear')}
         </Link>
       </div>
 
       {/* Stats Overview */}
       <div className="bg-white rounded-lg shadow p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
-          Aktuelle Lionsjahre
+          {t('lionsYears')}
         </h2>
         <div className="flex items-center gap-4">
           <div className="text-3xl font-bold text-lions-blue">
             {stats.lionsYearsCount}
           </div>
           <div className="text-gray-600">
-            {stats.lionsYearsCount === 1
-              ? 'Lionsjahr angelegt'
-              : 'Lionsjahre angelegt'}
+            {t('eventsCount', { count: stats.lionsYearsCount })}
           </div>
           {stats.lionsYearsCount > 0 && (
             <Link
               href="/planning/years"
               className="ml-auto text-lions-blue hover:underline"
             >
-              Alle anzeigen →
+              {tDashboard('viewAll')} →
             </Link>
           )}
         </div>
@@ -109,7 +110,7 @@ export default async function PlanningPage() {
 
       {/* Stammdaten Cards */}
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Stammdaten</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">{tDashboard('masterData')}</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {cards.map((card) => (
             <Link
@@ -145,7 +146,7 @@ export default async function PlanningPage() {
                       {card.count}
                     </span>
                     <span className="text-sm text-lions-blue group-hover:translate-x-1 transition-transform">
-                      Verwalten →
+                      {tDashboard('viewAll')} →
                     </span>
                   </div>
                 </div>

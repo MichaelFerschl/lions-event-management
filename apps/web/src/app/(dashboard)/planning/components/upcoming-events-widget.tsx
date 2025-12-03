@@ -1,11 +1,20 @@
 import Link from 'next/link';
+import { getTranslations } from 'next-intl/server';
+import { headers } from 'next/headers';
 import { getUpcomingPlannedEvents } from '../years/actions';
 
 export async function UpcomingEventsWidget() {
+  const tTime = await getTranslations('time');
+  const tDashboard = await getTranslations('dashboard');
+  const tEvents = await getTranslations('events');
+
+  const headersList = await headers();
+  const locale = headersList.get('x-locale') || 'de';
+
   const events = await getUpcomingPlannedEvents(3);
 
   const formatDate = (date: Date) => {
-    return new Date(date).toLocaleDateString('de-DE', {
+    return new Date(date).toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-US', {
       weekday: 'short',
       day: '2-digit',
       month: '2-digit',
@@ -13,7 +22,7 @@ export async function UpcomingEventsWidget() {
   };
 
   const formatTime = (date: Date) => {
-    return new Date(date).toLocaleTimeString('de-DE', {
+    return new Date(date).toLocaleTimeString(locale === 'de' ? 'de-DE' : 'en-US', {
       hour: '2-digit',
       minute: '2-digit',
     });
@@ -27,20 +36,20 @@ export async function UpcomingEventsWidget() {
     eventDate.setHours(0, 0, 0, 0);
     const diff = Math.ceil((eventDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-    if (diff === 0) return 'Heute';
-    if (diff === 1) return 'Morgen';
-    return `in ${diff} Tagen`;
+    if (diff === 0) return tTime('today');
+    if (diff === 1) return tTime('tomorrow');
+    return tTime('inDays', { count: diff });
   };
 
   return (
     <div className="bg-white rounded-lg shadow">
       <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-        <h3 className="font-medium text-gray-900">Nächste Termine</h3>
+        <h3 className="font-medium text-gray-900">{tDashboard('upcomingEvents')}</h3>
         <Link
           href="/planning/years"
           className="text-sm text-lions-blue hover:underline"
         >
-          Alle anzeigen →
+          {tDashboard('viewAll')} →
         </Link>
       </div>
 
@@ -59,12 +68,12 @@ export async function UpcomingEventsWidget() {
               d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
             />
           </svg>
-          <p className="text-sm text-gray-500">Keine anstehenden Termine</p>
+          <p className="text-sm text-gray-500">{tDashboard('noUpcomingEvents')}</p>
           <Link
             href="/planning/wizard"
             className="inline-block mt-2 text-sm text-lions-blue hover:underline"
           >
-            Lionsjahr planen
+            {tDashboard('planLionsYear')}
           </Link>
         </div>
       ) : (
@@ -96,7 +105,7 @@ export async function UpcomingEventsWidget() {
                         color: event.category?.color || '#00338D',
                       }}
                     >
-                      {new Date(event.date).toLocaleDateString('de-DE', {
+                      {new Date(event.date).toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-US', {
                         month: 'short',
                       })}
                     </span>
@@ -111,12 +120,12 @@ export async function UpcomingEventsWidget() {
                     </h4>
                     {event.isMandatory && (
                       <span className="flex-shrink-0 px-1.5 py-0.5 text-xs bg-amber-100 text-amber-700 rounded">
-                        Pflicht
+                        {tEvents('types.GENERAL_ASSEMBLY')}
                       </span>
                     )}
                   </div>
                   <div className="text-sm text-gray-500 mt-0.5">
-                    {formatDate(event.date)} • {formatTime(event.date)} Uhr
+                    {formatDate(event.date)} • {formatTime(event.date)}
                   </div>
                   {event.category && (
                     <div className="flex items-center gap-1.5 mt-1">
