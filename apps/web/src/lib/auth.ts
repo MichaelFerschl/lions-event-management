@@ -1,161 +1,92 @@
-import { auth, currentUser } from '@clerk/nextjs/server';
+import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { db, type Member, MemberRole } from '@/lib/db';
-import { getCurrentTenant } from './tenant';
+import { db, type Member, type Tenant } from '@/lib/db';
+import { cache } from 'react';
 
 /**
- * Get the current authenticated user from Clerk
- * Returns null if not authenticated
+ * Get current Supabase user (cached per request)
  */
-export async function getCurrentClerkUser() {
-  try {
-    const user = await currentUser();
-    return user;
-  } catch {
-    return null;
-  }
-}
+export const getCurrentSupabaseUser = cache(async () => {
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
-/**
- * Get the authenticated member from the database
- * Combines Clerk user with Member record
- */
-export async function getCurrentUser(): Promise<{
-  clerkUser: Awaited<ReturnType<typeof currentUser>>;
-  member: Member | null;
-} | null> {
-  const clerkUser = await getCurrentClerkUser();
-
-  if (!clerkUser) {
+  if (error || !user) {
     return null;
   }
 
-  try {
-    const tenant = await getCurrentTenant();
-    const member = await db.member.findUnique({
-      where: {
-        tenantId_clerkUserId: {
-          tenantId: tenant.id,
-          clerkUserId: clerkUser.id,
-        },
-      },
-    });
+  return user;
+});
 
-    return {
-      clerkUser,
-      member,
-    };
-  } catch (error) {
-    console.error('Error fetching member:', error);
-    return {
-      clerkUser,
-      member: null,
-    };
+/**
+ * Get current member with tenant (cached per request)
+ * This is the main function to get user context
+ */
+export const getCurrentMember = cache(
+  async (): Promise<(Member & { tenant: Tenant }) | null> => {
+    const user = await getCurrentSupabaseUser();
+
+    if (!user) {
+      return null;
+    }
+
+    try {
+      const member = await db.member.findFirst({
+        where: { authUserId: user.id },
+        include: { tenant: true, assignedRole: true },
+      });
+
+      return member as (Member & { tenant: Tenant }) | null;
+    } catch (error) {
+      console.error('Error fetching member:', error);
+      return null;
+    }
   }
-}
+);
+
+/**
+ * Get current tenant from the logged-in user
+ */
+export const getCurrentTenant = cache(async (): Promise<Tenant | null> => {
+  const member = await getCurrentMember();
+  return member?.tenant || null;
+});
 
 /**
  * Require authentication - redirect to sign-in if not authenticated
- * Returns the authenticated user
  */
 export async function requireAuth() {
-  const { userId } = await auth();
+  const member = await getCurrentMember();
 
-  if (!userId) {
+  if (!member) {
     redirect('/sign-in');
   }
 
-  const user = await getCurrentUser();
-
-  if (!user) {
-    redirect('/sign-in');
-  }
-
-  return user;
+  return member;
 }
 
 /**
- * Require specific role(s) - throws error if user doesn't have required role
- * Returns 403 Forbidden error
+ * Require specific role - redirect if insufficient permissions
  */
-export async function requireRole(allowedRoles: MemberRole[]) {
-  const user = await requireAuth();
+export async function requireRole(allowedRoleTypes: string[]) {
+  const member = await requireAuth();
 
-  if (!user.member) {
-    throw new Error('Member profile not found');
-  }
-
-  if (!allowedRoles.includes(user.member.role)) {
+  if (
+    !member.assignedRole ||
+    !allowedRoleTypes.includes(member.assignedRole.type)
+  ) {
     throw new Error('Forbidden: Insufficient permissions');
   }
 
-  return user;
+  return member;
 }
 
 /**
- * Get authenticated member for a specific tenant
- * Returns null if not found
- */
-export async function getAuthenticatedMember(
-  tenantId: string
-): Promise<Member | null> {
-  const clerkUser = await getCurrentClerkUser();
-
-  if (!clerkUser) {
-    return null;
-  }
-
-  try {
-    const member = await db.member.findUnique({
-      where: {
-        tenantId_clerkUserId: {
-          tenantId,
-          clerkUserId: clerkUser.id,
-        },
-      },
-    });
-
-    return member;
-  } catch (error) {
-    console.error('Error fetching authenticated member:', error);
-    return null;
-  }
-}
-
-/**
- * Check if current user has a specific role
- */
-export async function hasRole(role: MemberRole): Promise<boolean> {
-  try {
-    const user = await getCurrentUser();
-    return user?.member?.role === role;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Check if current user has any of the specified roles
- */
-export async function hasAnyRole(roles: MemberRole[]): Promise<boolean> {
-  try {
-    const user = await getCurrentUser();
-    return user?.member ? roles.includes(user.member.role) : false;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Check if current user is admin
+ * Check if current user has admin role
  */
 export async function isAdmin(): Promise<boolean> {
-  return hasRole('ADMIN');
-}
-
-/**
- * Check if current user is admin or board member
- */
-export async function isAdminOrBoard(): Promise<boolean> {
-  return hasAnyRole(['ADMIN', 'BOARD']);
+  const member = await getCurrentMember();
+  return member?.assignedRole?.type === 'ADMIN';
 }

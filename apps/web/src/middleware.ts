@@ -116,10 +116,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // ============================================
-  // 4. SET TENANT HEADERS FOR APP ROUTES
+  // 4. SET LOCALE HEADER FOR APP ROUTES
   // ============================================
-  // Get tenant from query parameter for development, default to 'demo'
-  const tenantSlug = request.nextUrl.searchParams.get('tenant') || 'demo';
+  // Tenant is now resolved from the authenticated user in lib/auth.ts
+  // No longer using x-tenant-slug header for app routes
 
   // Get locale: priority is cookie > accept-language header > default 'de'
   const localeCookie = request.cookies.get('locale')?.value;
@@ -128,7 +128,6 @@ export async function middleware(request: NextRequest) {
   const locale = localeCookie || browserLocale;
 
   // Set headers for downstream use
-  supabaseResponse.headers.set('x-tenant-slug', tenantSlug);
   supabaseResponse.headers.set('x-locale', locale);
   supabaseResponse.headers.set('x-is-public-site', 'false');
 
