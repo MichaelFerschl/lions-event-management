@@ -1,7 +1,17 @@
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 import { Providers } from '@/providers';
+import { locales, defaultLocale, type Locale } from '@/i18n/config';
 import './globals.css';
+
+// Static imports for messages - required for Vercel production
+import de from '@/i18n/messages/de.json';
+import en from '@/i18n/messages/en.json';
+
+const messagesMap: Record<Locale, typeof de> = {
+  de,
+  en,
+};
 
 export const metadata: Metadata = {
   title: 'Lions Event Management Hub',
@@ -14,12 +24,14 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Get locale from middleware headers
   const headersList = await headers();
-  const locale = headersList.get('x-locale') || 'de';
+  const localeHeader = headersList.get('x-locale') || defaultLocale;
 
-  // Load messages for the locale
-  const messages = (await import(`@/i18n/messages/${locale}.json`)).default;
+  const locale = locales.includes(localeHeader as Locale)
+    ? (localeHeader as Locale)
+    : defaultLocale;
+
+  const messages = messagesMap[locale];
 
   return (
     <html lang={locale}>
