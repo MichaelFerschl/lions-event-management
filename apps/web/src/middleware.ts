@@ -118,8 +118,8 @@ export async function middleware(request: NextRequest) {
   // ============================================
   // 4. SET TENANT HEADERS FOR APP ROUTES
   // ============================================
-  // Get tenant from query parameter for development, default to 'lauf'
-  const tenantSlug = request.nextUrl.searchParams.get('tenant') || 'lauf';
+  // Get tenant from query parameter for development, default to 'demo'
+  const tenantSlug = request.nextUrl.searchParams.get('tenant') || 'demo';
 
   // Get locale: priority is cookie > accept-language header > default 'de'
   const localeCookie = request.cookies.get('locale')?.value;
