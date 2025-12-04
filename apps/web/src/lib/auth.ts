@@ -1,6 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import { db, type Member, type Tenant } from '@/lib/db';
+import { db, type Member, type Tenant, type MemberRole } from '@/lib/db';
 import { cache } from 'react';
 
 /**
@@ -35,7 +35,7 @@ export const getCurrentMember = cache(
     try {
       const member = await db.member.findFirst({
         where: { authUserId: user.id },
-        include: { tenant: true, assignedRole: true },
+        include: { tenant: true },
       });
 
       return member as (Member & { tenant: Tenant }) | null;
@@ -70,13 +70,10 @@ export async function requireAuth() {
 /**
  * Require specific role - redirect if insufficient permissions
  */
-export async function requireRole(allowedRoleTypes: string[]) {
+export async function requireRole(allowedRoles: MemberRole[]) {
   const member = await requireAuth();
 
-  if (
-    !member.assignedRole ||
-    !allowedRoleTypes.includes(member.assignedRole.type)
-  ) {
+  if (!allowedRoles.includes(member.role)) {
     throw new Error('Forbidden: Insufficient permissions');
   }
 
@@ -88,5 +85,5 @@ export async function requireRole(allowedRoleTypes: string[]) {
  */
 export async function isAdmin(): Promise<boolean> {
   const member = await getCurrentMember();
-  return member?.assignedRole?.type === 'ADMIN';
+  return member?.role === 'ADMIN';
 }
