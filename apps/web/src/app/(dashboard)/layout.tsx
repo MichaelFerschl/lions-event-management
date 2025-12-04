@@ -57,9 +57,48 @@ export default async function DashboardLayout({
             </NavLink>
           </nav>
 
-          {/* Footer */}
-          <div className="p-4 border-t border-white/10">
-            <div className="text-xs text-white/50">
+          {/* Footer with Debug Info */}
+          <div className="p-4 border-t border-white/10 space-y-3">
+            {/* Tenant Info */}
+            <div className="bg-white/5 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                <span className="text-xs font-medium text-white/80">Verbunden</span>
+              </div>
+
+              <div className="space-y-1">
+                <div className="text-xs text-white/50">Club</div>
+                <div className="text-sm font-medium text-white truncate" title={tenant.name}>
+                  {tenant.name}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <div className="text-white/50">Tenant ID</div>
+                  <div className="text-white/80 font-mono truncate" title={tenant.id}>
+                    {tenant.id.slice(0, 8)}...
+                  </div>
+                </div>
+                <div>
+                  <div className="text-white/50">Club Nr.</div>
+                  <div className="text-white/80 font-mono">
+                    {tenant.clubNumber}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-xs text-white/50">Datenbank</div>
+                <div className="text-xs text-white/80 font-mono">
+                  {process.env.NODE_ENV === 'production' ? 'PROD' :
+                   process.env.VERCEL_ENV === 'preview' ? 'TEST' :
+                   process.env.VERCEL_ENV === 'development' ? 'DEV' : 'LOCAL'}
+                </div>
+              </div>
+            </div>
+
+            <div className="text-xs text-white/30 text-center">
               Lions Event Management Hub
             </div>
           </div>
